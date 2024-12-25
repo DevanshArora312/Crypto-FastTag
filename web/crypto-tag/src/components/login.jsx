@@ -11,7 +11,7 @@ const Login = () => {
 
     return (
         <div className="py-32">
-          <div className="flex bg-white rounded-lg shadow-lg overflow-hidden mx-auto max-w-sm lg:max-w-4xl">
+          <div className="flex bg-white rounded-lg shadow-lg overflow-hidden mx-auto max-w-sm lg:max-w-4xl py-16">
             <div
               className="hidden lg:block lg:w-1/2 bg-cover"
               style={{
@@ -38,7 +38,15 @@ const Login = () => {
                 Anon Aadhaar allows you to create a proof of your Aadhaar ID without revealing any personal data. This process is local to your browser for privacy, and QR images are not uploaded to any server.
               </div>
               <div className="mt-8 flex items-center justify-center">
-                    <LogInWithAnonAadhaar/>
+                    <LogInWithAnonAadhaar
+                      nullifierSeed={1234}  
+                      fieldsToReveal={[
+                        'revealAgeAbove18',
+                        'revealState',
+                        'revealPinCode',
+                        'revealGender'
+                      ]}
+                    />
               </div>
               <div className="mt-4 flex items-center justify-between">
                 <span className="border-b w-1/5 md:w-1/4"></span>
