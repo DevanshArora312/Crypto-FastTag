@@ -1,13 +1,11 @@
-import { useState } from 'react'
-import Login from './components/login'
 import './App.css'
+import Login from './components/login'
+import Home from './components/home'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <>
-        <Login/>  
+      <Home/>
     </>
   )
 }
