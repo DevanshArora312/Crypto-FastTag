@@ -1,12 +1,11 @@
-import React from 'react'
-import { useAnonAadhaar } from '@anon-aadhaar/react';
+import { useAnonAadhaar, LogInWithAnonAadhaar } from '@anon-aadhaar/react';
 import { useEffect } from 'react';
-import { LogInWithAnonAadhaar } from '@anon-aadhaar/react';
 
 const Login = () => {
-    const [AnonAdhaar] = useAnonAadhaar();
+    const AnonAdhaar = useAnonAadhaar();
     useEffect(()=>{
-        console.log(AnonAdhaar);
+        const {proof} = AnonAdhaar;
+        console.log(proof);
     }, [AnonAdhaar]);
 
     return (
