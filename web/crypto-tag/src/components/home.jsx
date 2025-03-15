@@ -1,20 +1,26 @@
-import React from 'react'
 import { useEffect, useState } from 'react';
 import { LogInWithAnonAadhaar, useAnonAadhaar } from '@anon-aadhaar/react'
+import CreateWallet from './createWallet';
+import Wallet from './Wallet';
+import { useNavigate } from 'react-router-dom';
 const Home = () => {
     const [AnonAdhaar] = useAnonAadhaar();
+    const navigate = useNavigate();
     useEffect(()=>{
         if(AnonAdhaar.status == 'logged-out'){
             // fallback to login route
+            navigate('/login')
         }
         setProof(JSON.parse(AnonAdhaar.anonAadhaarProofs[0].pcd))
     }, []);
     const [proof, setProof] = useState(null);
+    const [wallet, setWallet] = useState(null);
+    const [seedPhrase, setSeedPhrase] = useState(null);
     const walletaddress = "0x9b51FB6fE636f979059bd90B375Fc3e153B9F537"
     const walletamount = '0.5eth'
     return (
-        <div className="p-8">
-        <div className="p-8 bg-white shadow mt-24">
+        <div className="p-8 w-[1024px] mx-auto">
+        <div className="p-8 bg-white shadow mt-16">
           <div className="grid grid-cols-1 md:grid-cols-3">
             <div className="grid grid-cols-3 text-center order-last md:order-first mt-20 md:mt-0">
               <div>
@@ -32,7 +38,7 @@ const Home = () => {
             </div>
   
             <div className="relative">
-              <div className="w-48 h-48 bg-indigo-100 mx-auto rounded-full shadow-2xl absolute inset-x-0 top-0 -mt-24 flex items-center justify-center text-indigo-500">
+              <div className="w-40 h-40 bg-indigo-100 mx-auto rounded-full shadow-2xl absolute inset-x-0 top-0 -mt-28 flex items-center justify-center text-indigo-500">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-24 w-24"
@@ -57,15 +63,24 @@ const Home = () => {
               </div>
             </div>
           </div>
-  
-          <div className="mt-20 text-center pb-12">
+          <div>
+          {
+            !wallet &&
+            <CreateWallet setWallet={setWallet} seedPhrase={seedPhrase} setSeedPhrase={setSeedPhrase}/>
+          }
+          {
+            wallet &&
+            <Wallet setSeedPhrase={setSeedPhrase} wallet={wallet} selectedChain={'0xAA36A7'}/>
+          }
+          </div>
+          {/* <div className="mt-20 text-center pb-12">
             <span className="text-md font-medium text-blue-700 bg-blue-700/10 px-2 rounded-full cursor-pointer">
                 {walletaddress}
             </span>
             <p className="text-gray-600 font-bold mt-3">{walletamount}</p>
             <p className="mt-8 text-gray-500">Crypto-FastTag</p>
             <p className="mt-2 text-gray-500">Crypto-FastTag uses blockchain's immutable ledger and smart contracts to prevent transaction tampering and ensure payment authenticity</p>
-          </div>
+          </div> */}
         </div>
       </div>
     )

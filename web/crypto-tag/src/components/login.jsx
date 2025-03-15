@@ -1,11 +1,15 @@
-import { useAnonAadhaar, LogInWithAnonAadhaar } from '@anon-aadhaar/react';
+import { useAnonAadhaar } from '@anon-aadhaar/react';
 import { useEffect } from 'react';
-
+import { LogInWithAnonAadhaar } from '@anon-aadhaar/react';
+import { useNavigate } from 'react-router-dom';
 const Login = () => {
-    const AnonAdhaar = useAnonAadhaar();
+    const navigate = useNavigate();
+    const [AnonAdhaar] = useAnonAadhaar();
     useEffect(()=>{
-        const {proof} = AnonAdhaar;
-        console.log(proof);
+        console.log(AnonAdhaar);
+        if(AnonAdhaar.status === 'logged-in'){
+          navigate('/home');
+        } 
     }, [AnonAdhaar]);
 
     return (
