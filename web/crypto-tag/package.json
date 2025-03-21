@@ -12,11 +12,17 @@
   "dependencies": {
     "@anon-aadhaar/react": "^2.4.3",
     "antd": "^5.24.3",
+    "circomlib": "^2.0.5",
     "crypto-js": "^4.2.0",
     "ethers": "^6.13.5",
+    "prismjs": "^1.30.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^7.3.0"
+    "react-router-dom": "^7.3.0",
+    "react-simple-code-editor": "^0.14.1",
+    "snarkjs": "^0.7.5",
+    "viem": "^2.23.11",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

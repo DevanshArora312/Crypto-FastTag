@@ -29,14 +29,14 @@ const Signin = ({setWallet, setSeedPhrase}) => {
 
     return (
     <div>
-      <h2 className='mb-4'>Manage Wallet</h2>
+      <h2 className='mb-8'>Manage Wallet</h2>
       <Input.Password
         placeholder="Enter password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         style={{ marginBottom: '16px' }}
       />
-      <div className='flex flex-col gap-4'>
+      <div className='flex flex-col mt-2 gap-6'>
         <Button onClick={unlockWallet} type="primary"  disabled={!password}>
             Unlock Wallet
         </Button>

@@ -48,19 +48,21 @@ const Wallet = ({
   const [balance, setBalance] = useState(null);
   const [amount, setAmount] = useState(0);
   const [address, setAddress] = useState("");
-
-
+  const [fastags, setFastags] = useState([]);
   useEffect(()=>{
     (async()=>{
       const response = await fetch(`http://localhost:5000/getFunds?userAddress=${wallet}&chain=${selectedChain}`);
       const data = await response.json();
-      console.log(wallet, selectedChain, data);
       setBalance(data);
     })();
   }, []);
-
+  useEffect(()=>{
+    let _fastags = localStorage.getItem('fastags');
+    if(_fastags === null) _fastags = [];
+    else _fastags = JSON.parse(_fastags);
+    setFastags(_fastags);
+  }, [])
   const [hash, setHash] = useState("");
-
   const copyToClipboard = () => {
     navigator.clipboard.writeText(wallet).then(() => {
         setCopied(true);
@@ -94,11 +96,11 @@ const Wallet = ({
             bordered
             itemLayout='horizontal'
             dataSource={balance ? balance.tokens : []}
-            className='w-[250px]'
+            className='w-[250px] md:w-[450px] h-[160px] flex flex-col items-center'
             renderItem={(item)=>(
               <List.Item style={{ textAlign: "left" }}>
                     <List.Item.Meta
-                      avatar={<Avatar src={item.logo} />}
+                      avatar={<Avatar src={item.logo} style={{ margin: "auto" }}/>}
                       title={item.symbol}
                       description={item.name}
                     />
@@ -124,7 +126,7 @@ const Wallet = ({
           balance && balance.nfts.length > 0? (<>{
             balance.nfts.map((e, i)=>{
                 return (<>
-                  <img src={e} key={i} alt={"nftImage"} className='h-[240px] w-[240px] object-cover rounded-[10px]'/>
+                  <img src={e} key={i} alt={"nftImage"} className='h-[300px] w-[250px] md:w-[450px] object-cover rounded-[10px]'/>
                 </>)
             })
           }</>) : (<>
@@ -136,7 +138,7 @@ const Wallet = ({
     {
       key: '3',
       label: 'Transfer',
-      children: <div className='flex flex-col item-center gap-4 w-[250px]'>
+      children: <div className='flex flex-col item-center gap-8 w-[250px] md:w-[450px]'>
           <div>
             <Input addonBefore="To:" placeholder='0x1' type='text' onChange={(e)=>{
               setAddress(e.target.value);
@@ -159,8 +161,9 @@ const Wallet = ({
                     const chain = "https://eth-sepolia.g.alchemy.com/v2/GRIRfkS8p_KDIhtPgEcauWBfjucLFolH";
                     const provider = new ethers.JsonRpcProvider(chain);
                     const privateKey = ethers.Wallet.fromPhrase(seedPhrase).privateKey;
-                    const wallet = new ethers.Wallet(privateKey, provider);
                     console.log("transaction starts");
+                    const wallet = new ethers.Wallet(privateKey, provider);
+                    // console.log("transaction starts");
                     const transaction = await wallet.sendTransaction({
                       to: address,
                       value: ethers.parseEther(amount)
@@ -186,6 +189,20 @@ const Wallet = ({
           </div>
       </div>,
     },
+    {
+      key: '4',
+      label: 'FastTags',
+      children: <div className='flex flex-col item-center mx-auto gap-8 w-[250px] md:w-[450px]'>
+          {
+            fastags.map((item, index)=>{
+              console.log(item)
+              return <div key={index} className='flex flex-row justify-center items-center border-2 rounded-md cursor-pointer py-2 gap-2'>
+                  <div>{item.address}</div>
+              </div>
+            })
+          }
+      </div>
+    }
   ];
 
   return (

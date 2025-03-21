@@ -6,7 +6,7 @@ const Login = () => {
     const navigate = useNavigate();
     const [AnonAdhaar] = useAnonAadhaar();
     useEffect(()=>{
-        console.log(AnonAdhaar);
+        console.log(AnonAdhaar.status);
         if(AnonAdhaar.status === 'logged-in'){
           navigate('/home');
         } 
