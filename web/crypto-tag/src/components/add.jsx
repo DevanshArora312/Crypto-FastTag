@@ -15,7 +15,7 @@ const RCVerification = () => {
   const [extractedData, setExtractedData] = useState(null);
 
   const simulateRCVerification = async (rcNumber, rcXML) => {
-    await new Promise(resolve => setTimeout(resolve, 100000));
+    await new Promise(resolve => setTimeout(resolve, 10000));
     let isValid = false;
     parseString(rcXML, (err, result) => {
       if (err) {
@@ -24,7 +24,6 @@ const RCVerification = () => {
       }
       else{
         const certificate = result?.Certificate;
-        console.log(certificate);
         const ownerName = certificate?.IssuedTo[0]?.Person[0]?.$?.name;
         const vehicle = certificate.CertificateData[0]?.VehicleRegistration[0]?.Vehicle[0]?.$;
         const rc = certificate?.$?.number; 
@@ -59,9 +58,9 @@ const RCVerification = () => {
     };
   };
 
-  const generateZKProof = async (rcDetails) => {
+  const generateZKProof = async (rcDetails, rcXML) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 100000)); 
+      await new Promise(resolve => setTimeout(resolve, 10000)); 
       
       const proof = {
         proof: {
@@ -80,9 +79,32 @@ const RCVerification = () => {
 
       let fastags = localStorage.getItem('fastags')
       if(fastags === null) fastags = [];
-      else fastags = JSON.parse(fastags);
 
-      fastags.push(wallet)
+
+      parseString(rcXML, (err, result) => {
+        if (err) {
+          console.log(err)
+          return;
+        }
+        else{
+          const certificate = result?.Certificate;
+          const ownerName = certificate?.IssuedTo[0]?.Person[0]?.$?.name;
+          const vehicle = certificate.CertificateData[0]?.VehicleRegistration[0]?.Vehicle[0]?.$;
+          const rc = certificate?.$?.number; 
+          const extractedData = {
+            rc,
+            ownerName,
+            chasisNo: vehicle?.chasisNo,
+            engineNo: vehicle?.engineNo,
+            make: vehicle?.make,
+            model: vehicle?.model,
+            fuelType: vehicle?.fuelDesc,
+            color: vehicle?.color
+          }
+          console.log(extractedData)
+          fastags.push({wallet, extractedData})
+        }
+      });
 
       localStorage.setItem('fastags', JSON.stringify(fastags));
 
@@ -109,7 +131,7 @@ const RCVerification = () => {
       setVerificationResult(response);
       
       if (response.isValid) {
-        await generateZKProof(values);
+        await generateZKProof(values, values.rcXML);
       }
     } catch (error) {
       console.error('Verification failed:', error);
@@ -167,7 +189,7 @@ const RCVerification = () => {
           label="RC XML"
           rules={[{ required: true, message: 'Please enter RC XML' }]}
         >
-          <Input.TextArea placeholder='Please enter RC XML'/>
+          <Input.TextArea rows={8} placeholder='Please enter RC XML'/>
         </Form.Item>
 
         <Form.Item>
@@ -237,7 +259,7 @@ const RCVerification = () => {
           {verificationResult.isValid && !proofGenerated && (
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
               <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
-              <Text style={{ display: 'block', marginTop: 12 }}>Generating zero-knowledge proof...</Text>
+              <Text style={{ display: 'block', marginTop: 12 }} >Generating zero-knowledge proof...</Text>
             </div>
           )}
         </>

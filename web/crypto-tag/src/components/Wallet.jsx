@@ -49,6 +49,7 @@ const Wallet = ({
   const [amount, setAmount] = useState(0);
   const [address, setAddress] = useState("");
   const [fastags, setFastags] = useState([]);
+  const [fastagbalance, setFastagbalance] = useState([]);
   useEffect(()=>{
     (async()=>{
       const response = await fetch(`http://localhost:5000/getFunds?userAddress=${wallet}&chain=${selectedChain}`);
@@ -61,7 +62,18 @@ const Wallet = ({
     if(_fastags === null) _fastags = [];
     else _fastags = JSON.parse(_fastags);
     setFastags(_fastags);
+    (async()=>{
+      let _balance = []
+      for(let tag of _fastags){
+        console.log("wallet", tag);
+        const response = await fetch(`http://localhost:5000/getFunds?userAddress=${tag.wallet.address}&chain=${selectedChain}`);
+        const data = await response.json();
+        _balance.push(data);
+      }
+      setFastagbalance(_balance);
+    })();
   }, [])
+  console.log("fastag : ", fastagbalance);
   const [hash, setHash] = useState("");
   const copyToClipboard = () => {
     navigator.clipboard.writeText(wallet).then(() => {
@@ -195,9 +207,14 @@ const Wallet = ({
       children: <div className='flex flex-col item-center mx-auto gap-8 w-[250px] md:w-[450px]'>
           {
             fastags.map((item, index)=>{
-              console.log(item)
-              return <div key={index} className='flex flex-row justify-center items-center border-2 rounded-md cursor-pointer py-2 gap-2'>
-                  <div>{item.address}</div>
+              return <div key={index} className='flex flex-col justify-center items-start px-2 border rounded-md cursor-pointer py-2 gap-2'>
+                  <div>Model: {item.extractedData?.model}</div>
+                  <div>Wallet: {item.wallet.address}</div>
+                  <div>{
+                    fastagbalance.length > index && <div>
+                      Balance: {fastagbalance[index].balance}
+                    </div> 
+                  }</div>
               </div>
             })
           }
