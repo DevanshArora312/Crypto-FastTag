@@ -1,10 +1,14 @@
 const express = require("express");
 const cors = require("cors");
 const Moralis = require("moralis").default;
+const { EvmChain } = require("@moralisweb3/common-evm-utils");
 require("dotenv").config();
 const app = express();
 app.use(cors());
 const port = process.env.PORT;
+
+const ABI = [];
+
 
 app.get("/getFunds", async(req, res)=>{
     const { userAddress, chain } = req.query;
@@ -37,6 +41,48 @@ app.get("/getFunds", async(req, res)=>{
         nfts: myNfts,
         balance: (balance.raw.balance) / (10 ** 18)
     })
+});
+
+app.get("/makePayment", async(req, res)=>{
+    try{
+        const {fastag, amount, toll} = req.query;
+        
+        const txResponse = await Moralis.EvmApi.transaction.runContractFunction({
+            chain: EvmChain.LOCALHOST,  // Use predefined chain (or hex ID 0x7a69 for Hardhat)
+            functionName: "makePayment",
+            address: process.env.CONTRACT_ADDRESS || "0xadasda1232sasd",
+            abi: ABI,
+            params: { fastag:fastag, amount:amount, toll:toll },
+            privateKey: process.env.PRIVATE_KEY || "WTF IS THIS",  
+        });
+
+        const receipt = await Moralis.EvmApi.transaction.getTransactionReceipt({
+            chain: EvmChain.LOCALHOST,
+            transactionHash: txResponse.result.hash
+        });
+
+        const logs = receipt.result.logs;
+        const event = Moralis.EvmApi.utils.decodeLogs({
+            abi: ABI,
+            logs: logs
+        });
+
+        const TransactionEvent = event.find(e => e.eventName === "TransactionLogged");
+        
+        return res.status(200).json({
+            success:true,
+            txHash: txResponse.result.hash,
+            user:TransactionEvent.fromUser,
+            timestamp:TransactionEvent.timestamp,
+            carNo:TransactionEvent.carNo
+        });
+
+    } catch(error){
+        res.status(500).json({ 
+            error: error.message,
+            details: error.response?.data?.message || "No additional details" 
+        });
+    }
 });
 
 Moralis.start({
