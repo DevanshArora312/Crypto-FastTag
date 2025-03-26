@@ -90,8 +90,11 @@ contract WalletFactory {
 
 contract MinimalWallet {
     // Basic AA wallet implementation
-    function execute(address to, uint256 value, bytes memory data) external {
-        (bool success, ) = to.call{value: value}(data);
+    function execute(address govtAdd, uint256 value, bytes memory data) external {
+        (bool success, ) = govtAdd.call{value: value}(data);
         require(success);
     }
 }
+
+// User ={name, gender, pincode, walletAddress}
+// Card -> BC -> Fastag -> (ParentWallet) -> Wallet Instance (Holds some eth) -> execute call(govtAdds,180,"")

@@ -2,16 +2,15 @@
 pragma solidity ^0.8.20;
 
 struct Users{
-    string name;
+    string proofHash;
     string gender;
-    Fastag[] fastags;
+    string[] fastags;
     address wallet;
     Transaction[] transactions;
-    string PrivateKey;
 }
 
 struct Fastag {
-    address user;
+    string user;
     string rcNumber;
     string chasisNumber;
     string model;
@@ -19,56 +18,67 @@ struct Fastag {
     address parentWallet;
 }
 struct Transaction {
-    address fromUser;
+    string fromUser;
     uint256 amount;
     uint256 timestamp;
     string toll;
     string carNo;
 }
 contract Registery{
-    mapping(address => Users) userRegister; // address to user /  maybe change to hash to user for better mapping
+    mapping(string => Users) userRegister; // address to user /  maybe change to hash to user for better mapping
     mapping(string => Fastag) fastagRegister; // some identifier say IDSTRING for fastag -- can be based on RC
     
     // mapping(address => Fastag[]) public userFastags;
     // mapping(address => Transaction[]) public userTransactions; // tmporarily commented --  may use if Storage write issue occurs - then remove User field of fastag array
 
-    event FastagAdded(address indexed owner, string fastagID);
-    event TransactionLogged(address indexed from, uint256 amount, uint256 timestamp, string toll, string carNo);
-    event FastagRemoved(address indexed owner, address indexed fastagAddress);
-    event UserAdded(address indexed user);
-    event TollAuthFail(address indexed fromUser, string toll);
-    
+    event FastagAdded(string user, string fastagID);
+    event TransactionLogged(string from, uint256 amount, uint256 timestamp, string toll, string carNo);
+    event UserAdded(string user);
+    event TollAuthFail(string fromUser, string toll);
+    event WalletCreated(address indexed wallet, string proofHash);
+    // event FastagRemoved(address indexed owner, address indexed fastagAddress);
+
+    function createWallet(string memory proofHash) public returns (address) {
+        // Deploy minimal AA wallet (simplified example)
+        bytes memory code = type(MinimalWallet).creationCode;
+        address wallet;
+        assembly {
+            wallet := create(0, add(code, 0x20), mload(code))
+        }
+
+        emit WalletCreated(wallet, proofHash);
+        return wallet;
+    }
+
     function addUser(
-        string memory name,
-        string memory gender,
-        address wallet,
-        string memory privateKey
-    ) public {
-        Fastag[] memory fast = new Fastag[](0);
+        string memory proofHash,
+        string memory gender
+    ) external {
+        string[] memory fast = new string[](0);
         Transaction[] memory trans = new Transaction[](0);
+        address wallet = createWallet(proofHash);
         Users memory newUser = Users({
-            name: name,
+            proofHash: proofHash,
             gender: gender,
             wallet: wallet,
             fastags: fast,
-            transactions:trans,
-            PrivateKey:privateKey
+            transactions:trans
         });
 
-        userRegister[msg.sender] = newUser;
-        emit UserAdded(msg.sender);
+        userRegister[proofHash] = newUser;
+        emit UserAdded(proofHash);
     }
 
     function addFastag(
-        address user,
+        string memory userProofHash,
         string memory rcNumber,
         string memory chasisNumber,
         string memory model,
         string memory carNum,
         address parentWallet
-    ) public {
+    ) external {
         Fastag memory newFastag = Fastag({
-            user: user,
+            user: userProofHash,
             rcNumber: rcNumber,
             chasisNumber: chasisNumber,
             model: model,
@@ -76,18 +86,16 @@ contract Registery{
             parentWallet : parentWallet
         });
 
-        string memory ID = ""; // TODO: Implement this string gen!!
-        userRegister[msg.sender].fastags.push(newFastag);
-        fastagRegister[ID] = newFastag;
-        emit FastagAdded(msg.sender, ID);
+        userRegister[userProofHash].fastags.push(chasisNumber);
+        fastagRegister[chasisNumber] = newFastag;
+        emit FastagAdded(userProofHash, chasisNumber);
     }
-    function makePayment(string memory fastag, uint256 amount,string memory toll) public{
+    function makePayment(string memory fastag, uint256 amount,string memory toll) external {
         require(amount > 0, "Invalid amount"); 
         
         address wallet = fastagRegister[fastag].parentWallet;
-        address fromUser = fastagRegister[fastag].user;
+        string memory fromUser = fastagRegister[fastag].user;
         require(wallet != address(0),"Invalid Wallet");
-        require(fromUser != address(0), "Invalid recipient");
         // TODO: Check if car blacklisted
 
         // TODO:verify that toll is authentic
@@ -96,13 +104,16 @@ contract Registery{
             revert("Auth Fail"); 
         }
         // TODO: IMPLEMENT PAYING LOGIC
-
+        address govt;
+        bool success = MinimalWallet(payable(wallet)).execute(govt, amount);
+        require(success,"Payment Failed!");
         logTransaction(fastag, amount, toll);
     }
     function logTransaction(string memory fastag, uint256 amount,string memory toll) public {
         require(amount > 0, "Invalid amount");
-        address fromUser = fastagRegister[fastag].user;
-        require(fromUser != address(0), "Invalid recipient");
+        
+        // require(fromUser != "", "Invalid recipient"); <-------- Remake this
+        string memory fromUser = fastagRegister[fastag].user;
         
         string memory carNo = fastagRegister[fastag].carNum; 
         Transaction memory newTransaction = Transaction({
@@ -113,24 +124,24 @@ contract Registery{
             carNo : carNo
         });
 
-        userRegister[msg.sender].transactions.push(newTransaction);
+        userRegister[fromUser].transactions.push(newTransaction);
 
         emit TransactionLogged(fromUser, amount, block.timestamp, toll, carNo);
     }
 
-    function getTransactions() 
+    function getTransactions(string memory proofHash) 
         public 
         view 
-        returns (address[] memory, uint256[] memory, uint256[] memory, string[] memory) 
+        returns (string[] memory, uint256[] memory, uint256[] memory, string[] memory) 
     {
-        uint256 count = userRegister[msg.sender].transactions.length;
-        address[] memory fromAddresses = new address[](count);
+        uint256 count = userRegister[proofHash].transactions.length;
+        string[] memory fromAddresses = new string[](count);
         uint256[] memory amounts = new uint256[](count);
         uint256[] memory timestamps = new uint256[](count);
         string[] memory tolls = new string[](count);
 
         for (uint256 i = 0; i < count; i++) {
-            Transaction storage tt = userRegister[msg.sender].transactions[i];
+            Transaction storage tt = userRegister[proofHash].transactions[i];
             fromAddresses[i] = tt.fromUser;
             amounts[i] = tt.amount;
             timestamps[i] = tt.timestamp;
@@ -140,4 +151,16 @@ contract Registery{
         return (fromAddresses, amounts, timestamps, tolls);
     }
 
+}
+
+contract MinimalWallet {
+    // Basic AA wallet implementation
+    receive() external payable {}
+
+    function execute(address govtAdd, uint256 value) external returns(bool) {
+        require(address(this).balance >= value,"Insufficient Account Balance");
+        (bool success, ) = govtAdd.call{value: value}("");
+        
+        return success;
+    }
 }
