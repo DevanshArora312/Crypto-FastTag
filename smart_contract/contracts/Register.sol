@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
-import "@opengsn/contracts/src/ERC2771Recipient.sol";
 struct Users{
     string proofHash;
     string gender;
@@ -24,13 +23,7 @@ struct Transaction {
     string toll;
     string carNo;
 }
-contract Registery is ERC2771Recipient {
-    constructor() {
-        _setTrustedForwarder(0x7A95fA73250dc53556d264522150A940d4C50238); // Sepolia Forwarder
-    }
-    // function _msgSender() internal view override(Context, BaseRelayRecipient) returns (address) {
-    //     return ERC2771Recipient._msgSender();
-    // }
+contract Registery {
     mapping(string => Users) userRegister; 
     mapping(string => Fastag) fastagRegister; 
     

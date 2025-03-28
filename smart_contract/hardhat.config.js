@@ -1,6 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
 require('@nomiclabs/hardhat-ethers');
-require('@openzeppelin/hardhat-upgrades');
 require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
@@ -13,13 +12,7 @@ module.exports = {
     },
     localhost: {
       url: "http://127.0.0.1:8545/"
-    } , 
-    // hardhat: {
-    //   forking: {
-    //     url: "https://sepolia.infura.io/v3/419d43d185044a968e7e91f9873fa37b",
-    //     blockNumber: 4782570,
-    //   },
-    // },
+    } 
   },
   settings: {
     viaIR: true,

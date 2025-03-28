@@ -10,7 +10,4 @@ export default defineConfig({
     strictPort: true,
     cors: true,
   },
-  define: {
-    global: 'window', // Polyfill global
-  },
 })
