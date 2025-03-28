@@ -1,4 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
+require('@nomiclabs/hardhat-ethers');
 require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
@@ -11,6 +12,13 @@ module.exports = {
     },
     localhost: {
       url: "http://127.0.0.1:8545/"
-    }
-  }
+    } 
+  },
+  settings: {
+    viaIR: true,
+    optimizer: {
+      enabled: true,
+      runs: 200,
+    },
+  },
 };

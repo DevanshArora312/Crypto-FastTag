@@ -6,10 +6,10 @@ require("dotenv").config();
 const app = express();
 app.use(cors());
 const port = process.env.PORT;
+const {ethers} = require("ethers");
+const registeryABI = require("./Registery.json");
 
-const ABI = [];
-
-
+app.use(express.json());
 app.get("/getFunds", async(req, res)=>{
     const { userAddress, chain } = req.query;
     
@@ -43,46 +43,55 @@ app.get("/getFunds", async(req, res)=>{
     })
 });
 
-app.get("/makePayment", async(req, res)=>{
-    try{
-        const {fastag, amount, toll} = req.query;
-        
-        const txResponse = await Moralis.EvmApi.transaction.runContractFunction({
-            chain: EvmChain.LOCALHOST,  // Use predefined chain (or hex ID 0x7a69 for Hardhat)
-            functionName: "makePayment",
-            address: process.env.CONTRACT_ADDRESS || "0xadasda1232sasd",
-            abi: ABI,
-            params: { fastag:fastag, amount:amount, toll:toll },
-            privateKey: process.env.PRIVATE_KEY || "WTF IS THIS",  
-        });
+app.post("/makePayment", async(req, res)=>{
+    console.log("boody:",req.body)
+    // console.log(req)
+    const {fastag, amount, toll} = req.body;
+    
+    const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+    const relayerWallet = new ethers.Wallet(process.env.RELAYER_PRIVATE_KEY, provider);
+    const registeryAddress = process.env.CONTRACT_ADDRESS;
 
-        const receipt = await Moralis.EvmApi.transaction.getTransactionReceipt({
-            chain: EvmChain.LOCALHOST,
-            transactionHash: txResponse.result.hash
-        });
+    const registeryContract = new ethers.Contract(registeryAddress, registeryABI.abi, relayerWallet);
+    const tx = await registeryContract.makePayment(fastag, ethers.parseUnits(amount.toString(), "ether"), toll);
 
-        const logs = receipt.result.logs;
-        const event = Moralis.EvmApi.utils.decodeLogs({
-            abi: ABI,
-            logs: logs
-        });
+    const receipt = await tx.wait();
+    console.log("Transaction confirmed, hash:", tx.hash);
+    // console.log("Transaction data:", receipt);
 
-        const TransactionEvent = event.find(e => e.eventName === "TransactionLogged");
-        
-        return res.status(200).json({
-            success:true,
-            txHash: txResponse.result.hash,
-            user:TransactionEvent.fromUser,
-            timestamp:TransactionEvent.timestamp,
-            carNo:TransactionEvent.carNo
-        });
+    const iface = new ethers.Interface(registeryABI.abi);
 
-    } catch(error){
-        res.status(500).json({ 
-            error: error.message,
-            details: error.response?.data?.message || "No additional details" 
-        });
+    const transactionEvent = receipt.logs.map(log => {
+            try {
+                return iface.parseLog(log);
+            } catch (error) {
+                return null;
+            }
+        }).find(event => event && event.name === "TransactionLogged");
+    var rest = {
+        fromUser : "Log Not Found",
+        timestamp: "Log Not Found",
+        carNo:"Log Not Found",
+    };
+    if (transactionEvent) {
+        console.log("TransactionLogged event found:", transactionEvent.args);
+        rest = {
+            fromUser : transactionEvent.args[0],
+            timestamp: transactionEvent.args[2].toString(),
+            carNo:transactionEvent.args[4],
+        };
+        // rest = transactionEvent.args;
+    } else {
+        console.log("TransactionLogged event NOT found!");
     }
+    // const TransactionEvent = event.find(e => e.eventName === "TransactionLogged");
+    
+    return res.status(200).json({
+        success:true,
+        user:rest?.fromUser,
+        timestamp:rest?.timestamp,
+        carNo:rest?.carNo
+    })
 });
 
 Moralis.start({

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
-
 struct Users{
     string proofHash;
     string gender;
@@ -24,20 +23,17 @@ struct Transaction {
     string toll;
     string carNo;
 }
-contract Registery{
-    mapping(string => Users) userRegister; // address to user /  maybe change to hash to user for better mapping
-    mapping(string => Fastag) fastagRegister; // some identifier say IDSTRING for fastag -- can be based on RC
+contract Registery {
+    mapping(string => Users) userRegister; 
+    mapping(string => Fastag) fastagRegister; 
     
-    // mapping(address => Fastag[]) public userFastags;
-    // mapping(address => Transaction[]) public userTransactions; // tmporarily commented --  may use if Storage write issue occurs - then remove User field of fastag array
-
     event FastagAdded(string user, string fastagID);
     event TransactionLogged(string from, uint256 amount, uint256 timestamp, string toll, string carNo);
     event UserAdded(string user);
     event TollAuthFail(string fromUser, string toll);
     event WalletCreated(address indexed wallet, string proofHash);
     // event FastagRemoved(address indexed owner, address indexed fastagAddress);
-
+    
     function createWallet(string memory proofHash) public returns (address) {
         // Deploy minimal AA wallet (simplified example)
         bytes memory code = type(MinimalWallet).creationCode;
@@ -54,18 +50,15 @@ contract Registery{
         string memory proofHash,
         string memory gender
     ) external {
-        string[] memory fast = new string[](0);
-        Transaction[] memory trans = new Transaction[](0);
+        // string[] memory fast = new string[](0);
+        // Transaction[] memory trans = new Transaction[](0);
         address wallet = createWallet(proofHash);
-        Users memory newUser = Users({
-            proofHash: proofHash,
-            gender: gender,
-            wallet: wallet,
-            fastags: fast,
-            transactions:trans
-        });
+        Users storage newUser = userRegister[proofHash];
+        newUser.proofHash = proofHash;
+        newUser.gender = gender;
+        newUser.wallet = wallet;
 
-        userRegister[proofHash] = newUser;
+        // userRegister[proofHash] = newUser;
         emit UserAdded(proofHash);
     }
 
@@ -92,7 +85,6 @@ contract Registery{
     }
     function makePayment(string memory fastag, uint256 amount,string memory toll) external {
         require(amount > 0, "Invalid amount"); 
-        
         address wallet = fastagRegister[fastag].parentWallet;
         string memory fromUser = fastagRegister[fastag].user;
         require(wallet != address(0),"Invalid Wallet");
@@ -103,8 +95,8 @@ contract Registery{
             emit TollAuthFail(fromUser, toll);
             revert("Auth Fail"); 
         }
-        // TODO: IMPLEMENT PAYING LOGIC
-        address govt;
+        
+        address govt = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
         bool success = MinimalWallet(payable(wallet)).execute(govt, amount);
         require(success,"Payment Failed!");
         logTransaction(fastag, amount, toll);
@@ -128,7 +120,7 @@ contract Registery{
 
         emit TransactionLogged(fromUser, amount, block.timestamp, toll, carNo);
     }
-
+    
     function getTransactions(string memory proofHash) 
         public 
         view 
@@ -150,6 +142,27 @@ contract Registery{
 
         return (fromAddresses, amounts, timestamps, tolls);
     }
+
+    function getUser(string memory proofHash) external view returns(Users memory){
+        require(bytes(userRegister[proofHash].proofHash).length > 0,"Invalid hash value!");
+        return userRegister[proofHash];
+    }
+
+    function getUserFastags(string memory proofHash) external view returns(Fastag[] memory){
+        require(bytes(userRegister[proofHash].proofHash).length > 0,"Invalid hash value!");
+        uint256 count = userRegister[proofHash].fastags.length;
+        Fastag[] memory fastags = new Fastag[](count); 
+        for(uint256 i = 0;i<count;i++){
+            // string storage x = ;
+            fastags[i] = fastagRegister[userRegister[proofHash].fastags[i]];
+        }
+        return fastags;
+    }
+
+    function getWalletBalance(string memory proofHash) external view returns(uint256){
+        address wallet = userRegister[proofHash].wallet;
+        return wallet.balance;
+    } 
 
 }
 
