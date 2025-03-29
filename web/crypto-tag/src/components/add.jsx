@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { Form, Input, Button, Card, Spin, Alert, Typography, Space, Divider, message } from 'antd';
+import { Form, Input, Button, Card, Watermark, Spin, Alert, Typography, Space, Divider, message } from 'antd';
 import { DownloadOutlined, CheckCircleOutlined, LoadingOutlined } from '@ant-design/icons';
 import { ethers } from 'ethers';
 import { parseString } from 'xml2js';
+import Editor from 'react-simple-code-editor';
+import { highlight, languages } from 'prismjs';
+import 'prismjs/themes/prism.css';
 
 const { Title, Text } = Typography;
 
@@ -13,9 +16,9 @@ const RCVerification = () => {
   const [proofGenerated, setProofGenerated] = useState(false);
   const [zkProof, setZkProof] = useState(null);
   const [extractedData, setExtractedData] = useState(null);
-
+  const [rcXML, setRcXML] = useState("");
   const simulateRCVerification = async (rcNumber, rcXML) => {
-    await new Promise(resolve => setTimeout(resolve, 10000));
+    await new Promise(resolve => setTimeout(resolve, 100000));
     let isValid = false;
     parseString(rcXML, (err, result) => {
       if (err) {
@@ -60,7 +63,7 @@ const RCVerification = () => {
 
   const generateZKProof = async (rcDetails, rcXML) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 10000)); 
+      await new Promise(resolve => setTimeout(resolve, 100000)); 
       
       const proof = {
         proof: {
@@ -126,12 +129,12 @@ const RCVerification = () => {
     setIsVerifying(true);
     
     try {
-      const response = await simulateRCVerification(values.rcNumber, values.rcXML);
+      const response = await simulateRCVerification(values.rcNumber, rcXML);
       
       setVerificationResult(response);
       
       if (response.isValid) {
-        await generateZKProof(values, values.rcXML);
+        await generateZKProof(values, rcXML);
       }
     } catch (error) {
       console.error('Verification failed:', error);
@@ -162,37 +165,46 @@ const RCVerification = () => {
 
   return (
     <Card 
-      style={{ maxWidth: 600, margin: '32px auto' }}
-      bordered={true}
-      className="shadow-md"
+      className='max-w-[600px] mt-[48px] mx-auto shadow-none'
+      bordered={false}
     >
-      <Title level={3} style={{ textAlign: 'center', marginBottom: 24 }}>
+      <Title level={3} className="text-gray-600" style={{ textAlign: 'center', marginBottom: 24 }}>
         Vehicle RC Verification with 0-Knowledge Proof
       </Title>
       
       <Form
         form={form}
         layout="vertical"
+        className='flex flex-col justify-center items-center'
         onFinish={verifyRC}
         requiredMark={false}
       >
         <Form.Item
           name="rcNumber"
           label="RC Number"
+          className='w-full'
           rules={[{ required: true, message: 'Please enter RC Number' }]}
         >
           <Input placeholder="Enter RC Number" size="large" />
         </Form.Item>
         
-        <Form.Item
-          name="rcXML"
-          label="RC XML"
-          rules={[{ required: true, message: 'Please enter RC XML' }]}
-        >
-          <Input.TextArea rows={8} placeholder='Please enter RC XML'/>
-        </Form.Item>
+        <Editor
+          value={rcXML}
+          onValueChange={setRcXML}
+          highlight={(code) => highlight(code, languages.xml, 'xml')}
+          padding={10}
+          style={{
+            fontFamily: '"Fira code", "Fira Mono", monospace',
+            fontSize: 14,
+            border: '1px solid #d9d9d9',
+            borderRadius: 8,
+            minHeight: 150,
+            margin: 12,
+            width: 550
+          }}
+        />
 
-        <Form.Item>
+        <Form.Item className='w-full'>
           <Button 
             type="primary" 
             htmlType="submit" 

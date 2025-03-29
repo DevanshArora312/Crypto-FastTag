@@ -1,27 +1,24 @@
 import { useEffect, useState } from 'react';
-import { LogInWithAnonAadhaar, useAnonAadhaar } from '@anon-aadhaar/react'
-import CreateWallet from './createWallet';
-import Wallet from './Wallet';
+import { useAnonAadhaar } from '@anon-aadhaar/react'
 import { useNavigate } from 'react-router-dom';
 import { Button } from 'antd';
+import RCVerification from './add';
 
-const Home = () => {
+const Fastag = () => {
     const [AnonAdhaar] = useAnonAadhaar();
     const navigate = useNavigate();
-    useEffect(()=>{
-        console.log(AnonAdhaar.status)
-        if(AnonAdhaar.status == 'logged-out'){
-            // fallback to login route
-            navigate('/login')
-        }
-        else{
-
-          setProof(JSON.parse(AnonAdhaar.anonAadhaarProofs[0].pcd))
-        }
-    }, [AnonAdhaar]);
     const [proof, setProof] = useState(null);
     const [wallet, setWallet] = useState(null);
-    const [seedPhrase, setSeedPhrase] = useState(null);
+    useEffect(()=>{
+      console.log(AnonAdhaar.status)
+      if(AnonAdhaar.status == 'logged-out'){
+          // fallback to login route
+          // navigate('/login')
+      }
+      else{
+        setProof(JSON.parse(AnonAdhaar.anonAadhaarProofs[0].pcd))
+      }
+    }, [AnonAdhaar]);
     return (
       <div className='bg-[#f1fffe] min-h-screen w-screen'>
         <div className="p-8 w-[1200px] mx-auto">
@@ -60,30 +57,15 @@ const Home = () => {
               </div>
     
               <div className="space-x-8 flex items-center justify-between mt-32 md:mt-0 md:justify-center">
-                <Button color="blue" variant="filled" disabled={wallet === null} className="px-4 py-5 font-bold text-md rounded-lg shadow-md shadow-gray-400 flex flex-col items-center justify-center cursor-pointer" onClick={()=>{
-                    
+                <Button color="blue" variant="filled" disabled={wallet === null} className="px-8 py-5 font-bold text-md rounded-lg shadow-md shadow-gray-400 flex flex-col items-center justify-center cursor-pointer" onClick={()=>{
+                    navigate('/home')
                 }}>
-                  Top up
+                  Back
                 </Button>
-                <Button color="blue" variant="filled" disabled={wallet === null} className="px-2 py-5 font-bold text-md rounded-lg shadow-md shadow-gray-400 flex flex-col items-center justify-center cursor-pointer" onClick={()=>{
-                    navigate('/fastag')
-                }}>
-                  Create FastTag
-                </Button>
-                <div>
-                  <LogInWithAnonAadhaar/>
-                </div>
               </div>
             </div>
             <div>
-            {
-              !wallet &&
-              <CreateWallet setWallet={setWallet} seedPhrase={seedPhrase} setSeedPhrase={setSeedPhrase}/>
-            }
-            {
-              wallet &&
-              <Wallet seedPhrase={seedPhrase} wallet={wallet} selectedChain={'0xAA36A7'}/>
-            }
+            <RCVerification/>
             </div>
           </div>
         </div>
@@ -91,4 +73,4 @@ const Home = () => {
     )
 }
 
-export default Home
+export default Fastag

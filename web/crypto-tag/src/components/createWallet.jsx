@@ -28,13 +28,13 @@ const Signin = ({setWallet, setSeedPhrase}) => {
     };
 
     return (
-    <div>
+    <div className="flex flex-col mt-20 gap-4">
       <h2 className='mb-8'>Manage Wallet</h2>
       <Input.Password
         placeholder="Enter password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        style={{ marginBottom: '16px' }}
+        style={{ marginBottom: '4px' }}
       />
       <div className='flex flex-col mt-2 gap-6'>
         <Button onClick={unlockWallet} type="primary"  disabled={!password}>
@@ -72,7 +72,7 @@ const CreatePassword = ({ seedPhrase, setStep }) => {
   };
 
   return (
-    <div className="flex flex-col mt-8 gap-4">
+    <div className="flex flex-col mt-28 gap-4">
       <h2>Create Password</h2>
       <div className="input-field">
         <Input.Password
