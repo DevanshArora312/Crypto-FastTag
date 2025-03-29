@@ -9,7 +9,7 @@ import 'prismjs/themes/prism.css';
 
 const { Title, Text } = Typography;
 
-const RCVerification = () => {
+const RCVerification = ({wallet, makeFastag}) => {
   const [form] = Form.useForm();
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationResult, setVerificationResult] = useState(null);
@@ -18,7 +18,7 @@ const RCVerification = () => {
   const [extractedData, setExtractedData] = useState(null);
   const [rcXML, setRcXML] = useState("");
   const simulateRCVerification = async (rcNumber, rcXML) => {
-    await new Promise(resolve => setTimeout(resolve, 100000));
+    await new Promise(resolve => setTimeout(resolve, 40000));
     let isValid = false;
     parseString(rcXML, (err, result) => {
       if (err) {
@@ -48,6 +48,7 @@ const RCVerification = () => {
         setExtractedData(prev => {
           return {...prev, ...extractedData}
         });
+        makeFastag(rc, vehicle?.chasisNo, vehicle?.model, vehicle?.engineNo)
       }
     });
     if(isValid){
@@ -63,7 +64,7 @@ const RCVerification = () => {
 
   const generateZKProof = async (rcDetails, rcXML) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 100000)); 
+      await new Promise(resolve => setTimeout(resolve, 40000)); 
       
       const proof = {
         proof: {
@@ -79,38 +80,6 @@ const RCVerification = () => {
       };
       const newSeedPhrase = ethers.Wallet.createRandom().mnemonic.phrase;
       const wallet = ethers.Wallet.fromPhrase(newSeedPhrase);
-
-      let fastags = localStorage.getItem('fastags')
-      if(fastags === null) fastags = [];
-
-
-      parseString(rcXML, (err, result) => {
-        if (err) {
-          console.log(err)
-          return;
-        }
-        else{
-          const certificate = result?.Certificate;
-          const ownerName = certificate?.IssuedTo[0]?.Person[0]?.$?.name;
-          const vehicle = certificate.CertificateData[0]?.VehicleRegistration[0]?.Vehicle[0]?.$;
-          const rc = certificate?.$?.number; 
-          const extractedData = {
-            rc,
-            ownerName,
-            chasisNo: vehicle?.chasisNo,
-            engineNo: vehicle?.engineNo,
-            make: vehicle?.make,
-            model: vehicle?.model,
-            fuelType: vehicle?.fuelDesc,
-            color: vehicle?.color
-          }
-          console.log(extractedData)
-          fastags.push({wallet, extractedData})
-        }
-      });
-
-      localStorage.setItem('fastags', JSON.stringify(fastags));
-
       setZkProof(proof);
       setProofGenerated(true);
     } catch (error) {

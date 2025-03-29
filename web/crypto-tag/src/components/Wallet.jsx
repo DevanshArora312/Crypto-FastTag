@@ -1,10 +1,13 @@
 import  {useEffect, useState} from 'react'
 import { FaRegCopy } from "react-icons/fa";
 import { TbCopyCheck } from "react-icons/tb";
-import { Button, Input, List, message } from 'antd';
-import { Tabs, Avatar } from "antd";
+import { Button, Input, List, message, QRCode } from 'antd';
+import { Tabs, Avatar, Watermark  } from "antd";
 import {ethers} from 'ethers';
 import { contractAddress, contractAbi } from '../constants';
+import RegistryAbi from "../assets/Registery.json"
+const registryAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+
 const Wallet = ({
   wallet,
   seedPhrase,
@@ -17,6 +20,44 @@ const Wallet = ({
     const contract = new ethers.Contract(contractAddress, contractAbi, signer);
     return contract;
   }
+
+  const getFastag = async () => {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      try {
+          const contract = new ethers.Contract(registryAddress, RegistryAbi.abi, signer);
+          const proofHash = localStorage.getItem("proofHash");
+          const tx = await contract.getUserFastags(proofHash); 
+          setFastags(tx)
+          message.success("Transaction Successful!");
+      } catch (error) {
+          console.error("Error executing contract function:", error);
+          message.error("Transaction Failed!");
+      }
+  }
+  
+  useEffect(()=>{
+    getFastag()
+  }, [])
+
+  const getBal = async () => {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    try {
+        let proofHash =  localStorage.getItem('proofHash') || "U2FsdGVkX18F9Q";
+        
+        const contract = new ethers.Contract(registryAddress, RegistryAbi.abi, signer);
+        const tx = await contract.getWalletBalance(proofHash); 
+        const balanceEth = ethers.formatEther(tx);
+
+        console.log(`Wallet Balance: ${balanceEth} ETH`);
+        setWalletBalance(balanceEth);
+    } catch (error) {
+        console.error("Error executing contract function:", error);
+        alert("Transaction Failed!");
+    }
+  }
+
   const logTransaction = async(to, amount)=>{
     const loadingmessage = message.loading("Logging transaction", 0);
     let miningmessage;
@@ -45,6 +86,7 @@ const Wallet = ({
   }
 
   const [copied, setCopied] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0);
   const [balance, setBalance] = useState(null);
   const [amount, setAmount] = useState(0);
   const [address, setAddress] = useState("");
@@ -55,13 +97,10 @@ const Wallet = ({
       const response = await fetch(`http://localhost:5000/getFunds?userAddress=${wallet}&chain=${selectedChain}`);
       const data = await response.json();
       setBalance(data);
+      await getBal();
     })();
   }, []);
   useEffect(()=>{
-    let _fastags = localStorage.getItem('fastags');
-    if(_fastags === null) _fastags = [];
-    else _fastags = JSON.parse(_fastags);
-    setFastags(_fastags);
     (async()=>{
       let _balance = []
       for(let tag of _fastags){
@@ -107,7 +146,7 @@ const Wallet = ({
           <List
             bordered
             itemLayout='horizontal'
-            dataSource={balance ? balance.tokens : []}
+            dataSource={[]}
             className='w-[250px] md:w-[450px] h-[160px] flex flex-col items-center'
             renderItem={(item)=>(
               <List.Item style={{ textAlign: "left" }}>
@@ -135,7 +174,7 @@ const Wallet = ({
       children: 
         <>
         {
-          balance && balance.nfts.length > 0? (<>{
+          [].length > 0? (<>{
             balance.nfts.map((e, i)=>{
                 return (<>
                   <img src={e} key={i} alt={"nftImage"} className='h-[300px] w-[250px] md:w-[450px] object-cover rounded-[10px]'/>
@@ -163,6 +202,9 @@ const Wallet = ({
           </div>
           <div>
               <Button type='dashed' className='w-full' onClick={async()=>{
+                  message.error("feature under development")
+                  return;
+
                   const loadingmessage = message.loading("loading...", 0);
                   let miningmessage;
                   try{
@@ -207,15 +249,22 @@ const Wallet = ({
       children: <div className='flex flex-col item-center mx-auto gap-8 w-[250px] md:w-[450px]'>
           {
             fastags.map((item, index)=>{
-              return <div key={index} className='flex flex-col justify-center items-start px-2 border rounded-md cursor-pointer py-2 gap-2'>
-                  <div>Model: {item.extractedData?.model}</div>
-                  <div>Wallet: {item.wallet.address}</div>
+              return <Watermark content="TollChain" className='flex flex-row items-center px-2 border rounded-md cursor-pointer py-2 gap-2'>
+                <div key={index} className='flex flex-col justify-center items-start'>
+                  <div>Model: {item[3]}</div>
+                  <div>Chasis Number: {item[2]}</div>
+                  <div>Engine Number: {item[4]}</div>
+                  <div>Registration Number: {item[1]}</div>
                   <div>{
                     fastagbalance.length > index && <div>
                       Balance: {fastagbalance[index].balance}
                     </div> 
                   }</div>
-              </div>
+                </div>
+                <div>
+                  <QRCode value={"https://en.wikipedia.org/wiki/Underdevelopment"} />
+                </div>
+              </Watermark> 
             })
           }
       </div>
@@ -235,7 +284,7 @@ const Wallet = ({
         <div>
             <div className='text-xl' >
                 {
-                  balance?.balance
+                  walletBalance
                 } 
                 {" "}
                 {

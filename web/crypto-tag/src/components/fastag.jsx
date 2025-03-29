@@ -1,23 +1,70 @@
 import { useEffect, useState } from 'react';
 import { useAnonAadhaar } from '@anon-aadhaar/react'
 import { useNavigate } from 'react-router-dom';
+import { message } from 'antd';
 import { Button } from 'antd';
 import RCVerification from './add';
+import contractAbi from "../assets/Registery.json"
+import { ethers } from "ethers";
+const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
 
 const Fastag = () => {
     const [AnonAdhaar] = useAnonAadhaar();
     const navigate = useNavigate();
     const [proof, setProof] = useState(null);
     const [wallet, setWallet] = useState(null);
+    const makeFastag = async (rcNumber, chasisNumber, model, carNumber) => {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        try {
+            const contract = new ethers.Contract(contractAddress, contractAbi.abi, signer);
+            let proofHash =  localStorage.getItem('proofHash') || "U2FsdGVkX18F9Q";
+            const tx = await contract.addFastag(proofHash, rcNumber, chasisNumber, model, carNumber, wallet);
+            console.log("Transaction sent:", tx.hash);
+            console.log("Transaction Data:", tx);
+
+            // Wait for transaction confirmation
+            await tx.wait();
+            console.log("Transaction confirmed!");
+
+            message.success("Transaction Successful!");
+        } catch (error) {
+            console.error("Error executing contract function:", error);
+            message.error("Transaction Failed!");
+        }
+    }
+    async function getUser(proofHash) {
+      if (!window.ethereum) {
+          message.error('Metamask Not Installed');
+          return;
+        }
+  
+        try {
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const signer = await provider.getSigner();
+          const contract = new ethers.Contract(contractAddress, contractAbi.abi, signer);
+          const tx = await contract.getUser(proofHash);
+          setWallet(tx[3]);
+  
+        } catch (error) {
+          localStorage.clear()
+          console.log(error);
+        }
+    }
+
     useEffect(()=>{
-      console.log(AnonAdhaar.status)
-      if(AnonAdhaar.status == 'logged-out'){
-          // fallback to login route
-          // navigate('/login')
-      }
-      else{
-        setProof(JSON.parse(AnonAdhaar.anonAadhaarProofs[0].pcd))
-      }
+      (async()=>{
+        console.log(AnonAdhaar.status)
+        if(AnonAdhaar.status == 'logged-out'){
+            // fallback to login route
+            // navigate('/login')
+        }
+        else{
+          let proofHash =  localStorage.getItem('proofHash') || "U2FsdGVkX18F9Q";
+          await getUser(proofHash)
+          setProof(JSON.parse(AnonAdhaar.anonAadhaarProofs[0].pcd))
+        }
+      })()
     }, [AnonAdhaar]);
     return (
       <div className='bg-[#f1fffe] min-h-screen w-screen'>
@@ -65,7 +112,7 @@ const Fastag = () => {
               </div>
             </div>
             <div>
-            <RCVerification/>
+            <RCVerification wallet={wallet} makeFastag={makeFastag}/>
             </div>
           </div>
         </div>

@@ -2,7 +2,11 @@ import { useAnonAadhaar } from '@anon-aadhaar/react';
 import { useEffect, useState } from 'react';
 import { LogInWithAnonAadhaar } from '@anon-aadhaar/react';
 import { useNavigate } from 'react-router-dom';
-import { Steps, Input, Button, Flex, Spin} from "antd";
+import { Steps, Input, Button, Flex, Spin, message } from "antd";
+import CryptoJS from "crypto-js";
+import contractAbi from "../assets/Registery.json"
+import { ethers } from "ethers";
+const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
 
 const Login = () => {
     const navigate = useNavigate();
@@ -10,13 +14,61 @@ const Login = () => {
     const [step, setStep] = useState(1)
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(true);
-    console.log(password);
-    useEffect(()=>{
-        console.log(AnonAdhaar.status);
-        if(AnonAdhaar.status === 'logged-in'){
-          setStep(3)
-          // validate
+    
+    // const [messageApi, contextHolder] = message.useMessage();
+    (async()=>{
+        // getUser("U2FsdGVkX18F9Q")
+    })();
+    async function getUser(proofHash) {
+      if (!window.ethereum) {
+        message.error('Metamask Not Installed');
+        return;
+      }
+
+      try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const contract = new ethers.Contract(contractAddress, contractAbi.abi, signer);
+        const tx = await contract.getUser(proofHash);
+        console.log(tx);
+
+        if (tx[0] === "") {
+          message.error('User doesn\'t exist or Wrong password');
+          localStorage.clear()
+          setStep(1)
+          console.log("User not found");
+        } else {
+          message.success("Task Successful")
+          console.log("successful!");
+          localStorage.setItem('proofHash', proofHash);
           navigate('/home')
+        }
+      } catch (error) {
+        localStorage.clear()
+        message.error('Something Went Wrong');
+        console.error("Error adding user:", error.message);
+        setStep(1)
+      }
+    }
+    // useEffect(()=>{
+    //   (async()=>{
+    //     setStep(3)
+    //     const proof = {"message": "ok"}
+    //     let proofHash = CryptoJS.AES.encrypt(JSON.stringify(proof), "satijanew").toString()
+    //     proofHash = proofHash.slice(0, 15)
+    //     console.log(proofHash)
+    //     getUser(proofHash)
+    //   })()
+    // }, [])
+    useEffect(()=>{
+        if(AnonAdhaar.status === 'logged-in'){
+          (async()=>{
+            setStep(3)
+            const proof = JSON.parse(AnonAdhaar.anonAadhaarProofs[0].pcd)
+            let proofHash = CryptoJS.AES.encrypt(JSON.stringify(proof), password).toString()
+            proofHash = proofHash.slice(0, 10)
+            getUser(proofHash)
+          })()
         } 
     }, [AnonAdhaar]);
     return (

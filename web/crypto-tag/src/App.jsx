@@ -5,8 +5,10 @@ import Signup from './components/signup'
 import Home from './components/home'
 import {Hero} from './components/hero'
 import RCVerification from './components/add'
+import TestPage from './components/TestPage'
 import Fastag from './components/fastag'
 function App() {
+  window.global = window;
   return (
     <>
       <Routes>
@@ -15,6 +17,7 @@ function App() {
         <Route path={'/login'} element={<Login/>}/>
         <Route path={'/Signup'} element={<Signup/>}/>
         <Route path={'/add'} element={<RCVerification/>}/>
+        <Route path={'/tmp'} element={<TestPage/>}/>
         <Route path={'/fastag'} element={<Fastag/>}/>
       </Routes>
     </>

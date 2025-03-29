@@ -2,7 +2,11 @@ import { useAnonAadhaar } from '@anon-aadhaar/react';
 import { useEffect, useState } from 'react';
 import { LogInWithAnonAadhaar } from '@anon-aadhaar/react';
 import { useNavigate } from 'react-router-dom';
-import { Steps, Input, Button, Flex, Spin} from "antd";
+import { Steps, Input, Button, Flex, Spin, message } from "antd";
+import CryptoJS from "crypto-js";
+import contractAbi from "../assets/Registery.json"
+import { ethers } from "ethers";
+const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
 
 const Signup = () => {
     const navigate = useNavigate();
@@ -10,13 +14,53 @@ const Signup = () => {
     const [step, setStep] = useState(1)
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(true);
-    console.log(password);
+    // const [messageApi, contextHolder] = message.useMessage();
+    async function addNewUser(proofHash, gender) {
+      if (!window.ethereum) {
+        message.error('Metamask Not Installed');
+        return;
+      }
+      
+      console.log(proofHash, gender);
+      try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const contract = new ethers.Contract(contractAddress, contractAbi.abi, signer);
+        console.log(contract);
+        const tx = await contract.addUser(proofHash, gender);
+        console.log("Transaction sent:", tx.hash);
+        await tx.wait();
+        console.log("User added successfully!");
+        localStorage.setItem('proofHash', proofHash);
+        navigate('/home')
+      } catch (error) {
+        message.error('Something Went Wrong, Please try again later')
+        console.error("Error adding user:", error);
+        localStorage.clear()
+        setStep(1);
+      }
+    }
+    // useEffect(()=>{
+    //   (async()=>{
+    //     setStep(3)
+    //     const proof = {"message": "ok"}
+    //     const gender = "male"
+    //     let proofHash = CryptoJS.AES.encrypt(JSON.stringify(proof), password).toString()
+    //     proofHash = proofHash.slice(0, 10)
+    //     console.log(proofHash)
+    //     await addNewUser(proofHash, gender)
+    //   })()
+    // }, [])
     useEffect(()=>{
-        console.log(AnonAdhaar.status);
         if(AnonAdhaar.status === 'logged-in'){
-          setStep(3)
-          // create user
-          navigate('/login')
+          (async()=>{
+            setStep(3)
+            const proof = JSON.parse(AnonAdhaar.anonAadhaarProofs[0].pcd)
+            const gender = proof?.claim?.gender
+            let proofHash = CryptoJS.AES.encrypt(JSON.stringify(proof), password).toString()
+            proofHash = proofHash.slice(0, 10)
+            await addNewUser(proofHash, gender)
+          })()
         } 
     }, [AnonAdhaar]);
     return (
