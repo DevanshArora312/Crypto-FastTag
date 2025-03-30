@@ -8,56 +8,47 @@ import contractAbi from "../assets/Registery.json"
 import { ethers } from "ethers";
 const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
 
-const Login = () => {
+const Signup = () => {
     const navigate = useNavigate();
     const [AnonAdhaar] = useAnonAadhaar();
     const [step, setStep] = useState(1)
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(true);
-    
     // const [messageApi, contextHolder] = message.useMessage();
-    (async()=>{
-        // getUser("U2FsdGVkX18F9Q")
-    })();
-    async function getUser(proofHash) {
+    async function addNewUser(proofHash, gender) {
       if (!window.ethereum) {
         message.error('Metamask Not Installed');
         return;
       }
-
+      
+      console.log(proofHash, gender);
       try {
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
         const contract = new ethers.Contract(contractAddress, contractAbi.abi, signer);
-        const tx = await contract.getUser(proofHash);
-        console.log(tx);
-
-        if (tx[0] === "") {
-          message.error('User doesn\'t exist or Wrong password');
-          localStorage.clear()
-          setStep(1)
-          console.log("User not found");
-        } else {
-          message.success("Task Successful")
-          console.log("successful!");
-          localStorage.setItem('proofHash', proofHash);
-          navigate('/home')
-        }
+        console.log(contract);
+        const tx = await contract.addUser(proofHash, gender);
+        console.log("Transaction sent:", tx.hash);
+        await tx.wait();
+        console.log("User added successfully!");
+        localStorage.setItem('proofHash', proofHash);
+        navigate('/home')
       } catch (error) {
+        message.error('Something Went Wrong, Please try again later')
+        console.error("Error adding user:", error);
         localStorage.clear()
-        message.error('Something Went Wrong');
-        console.error("Error adding user:", error.message);
-        setStep(1)
+        setStep(1);
       }
     }
     // useEffect(()=>{
     //   (async()=>{
     //     setStep(3)
     //     const proof = {"message": "ok"}
-    //     let proofHash = CryptoJS.AES.encrypt(JSON.stringify(proof), "satijanew").toString()
-    //     proofHash = proofHash.slice(0, 15)
+    //     const gender = "male"
+    //     let proofHash = CryptoJS.AES.encrypt(JSON.stringify(proof), password).toString()
+    //     proofHash = proofHash.slice(0, 10)
     //     console.log(proofHash)
-    //     getUser(proofHash)
+    //     await addNewUser(proofHash, gender)
     //   })()
     // }, [])
     useEffect(()=>{
@@ -65,9 +56,10 @@ const Login = () => {
           (async()=>{
             setStep(3)
             const proof = JSON.parse(AnonAdhaar.anonAadhaarProofs[0].pcd)
+            const gender = proof?.claim?.gender
             let proofHash = CryptoJS.AES.encrypt(JSON.stringify(proof), password).toString()
             proofHash = proofHash.slice(0, 10)
-            getUser(proofHash)
+            await addNewUser(proofHash, gender)
           })()
         } 
     }, [AnonAdhaar]);
@@ -93,7 +85,7 @@ const Login = () => {
             </div>
             {
               step === 1 &&
-              <div className="flex gap-8 bg-white overflow-hidden mx-auto max-w-sm lg:max-w-4xl">
+              <div className="flex flex-row-reverse gap-8 bg-white overflow-hidden mx-auto max-w-sm lg:max-w-4xl">
                 <div
                   className="hidden lg:block lg:w-1/2 bg-cover"
                   style={{
@@ -105,11 +97,10 @@ const Login = () => {
                   <h2 className="text-2xl font-semibold text-gray-700 text-center">
                     Crypto-FastTag
                   </h2>
-                  <p className="text-xl text-gray-600 text-center">Welcome back!</p>
                   <div className="mt-4 flex items-center justify-between">
                     <span className="border-b w-1/5 lg:w-1/4"></span>
                     <a href="#" className="text-xs text-center text-gray-500 uppercase">
-                        login with AnonAdhaar
+                        Signup with AnonAdhaar
                     </a>
                     <span className="border-b w-1/5 lg:w-1/4"></span>
                   </div>
@@ -136,7 +127,7 @@ const Login = () => {
             }
             {
               step === 2 &&
-              <div className="flex gap-8 bg-white overflow-hidden mx-auto max-w-sm lg:max-w-4xl">
+              <div className="flex flex-row-reverse gap-8 bg-white overflow-hidden mx-auto max-w-sm lg:max-w-4xl">
                 <div
                   className="hidden lg:block lg:w-1/2 bg-cover"
                   style={{
@@ -148,11 +139,10 @@ const Login = () => {
                   <h2 className="text-2xl font-semibold text-gray-700 text-center">
                     Crypto-FastTag
                   </h2>
-                  <p className="text-xl text-gray-600 text-center">Welcome back!</p>
                   <div className="mt-4 flex items-center justify-between">
                     <span className="border-b w-1/5 lg:w-1/4"></span>
                     <a href="#" className="text-xs text-center text-gray-500 uppercase">
-                        login with AnonAdhaar
+                        Signup with AnonAdhaar
                     </a>
                     <span className="border-b w-1/5 lg:w-1/4"></span>
                   </div>
@@ -198,4 +188,4 @@ const Login = () => {
       )
 }
 
-export default Login
+export default Signup

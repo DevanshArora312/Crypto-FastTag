@@ -143,10 +143,35 @@ contract Registery {
         return (fromAddresses, amounts, timestamps, tolls);
     }
 
-    function getUser(string memory proofHash) external view returns(Users memory){
-        require(bytes(userRegister[proofHash].proofHash).length > 0,"Invalid hash value!");
-        return userRegister[proofHash];
+    function getUser(string memory proofHash) external view returns (
+        string memory,     
+        string memory,      
+        string[] memory,   
+        address,           
+        Transaction[] memory 
+    ) {
+        Users storage user = userRegister[proofHash];
+        
+    
+        if(bytes(user.proofHash).length == 0) {
+            return (
+                "",         
+                "",         
+                new string[](0),  
+                address(0), 
+                new Transaction[](0) 
+            );
+        }
+        
+        return (
+            user.proofHash,
+            user.gender,
+            user.fastags,
+            user.wallet,
+            user.transactions
+        );
     }
+
 
     function getUserFastags(string memory proofHash) external view returns(Fastag[] memory){
         require(bytes(userRegister[proofHash].proofHash).length > 0,"Invalid hash value!");

@@ -2,12 +2,15 @@ import { ethers } from "ethers";
 import { useState } from "react";
 import contractAbi from "../assets/Registery.json"
 
+// Registery deployed to: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+// Wallet deployed to: 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+
 const TestPage = () => {
     
-    const [balance,setBal] = useState(-10);
+    const [balance,setBal] = useState(0);
     const [fast,setFast] = useState(0);
     const [WALLET,setWall] = useState(0);
-    const CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+    const CONTRACT_ADDRESS = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
     const proof = "ABC";
 
     const topup = async () => {
@@ -95,6 +98,41 @@ const TestPage = () => {
             console.error("Error executing contract function:", error);
             alert("Transaction Failed!");
         }
+    }
+     async function getUser(proofHash) {
+          if (!window.ethereum) {
+            message.error('Metamask Not Installed');
+            return;
+          }
+          
+          console.log(contractAddress);
+          console.log(contractAbi.abi);
+          try {
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            const signer = await provider.getSigner();
+            const contract = new ethers.Contract(contractAddress, contractAbi.abi, signer);
+            console.log(proofHash)
+            const tx = await contract.getUser(proofHash);
+            console.log(tx);
+            // console.log(retrievedProofHash, gender, fastags, wallet, transactions);
+    
+            if (tx[0] === "") {
+              message.error('User doesn\'t exist or Wrong password');
+              console.error("Error adding user:", error);
+              localStorage.clear()
+              setStep(1)
+              console.log("User not found");
+            } else {
+              console.log("successful!");
+              navigate('/home')
+            }
+          } catch (error) {
+            console.log("here");
+            localStorage.clear()
+            message.error('Something Went Wrong');
+            console.error("Error adding user:", error.message);
+            setStep(1)
+          }
     }
     const getFastagNum = async () => {
         const provider = new ethers.BrowserProvider(window.ethereum);
