@@ -94,6 +94,36 @@ app.post("/makePayment", async(req, res)=>{
     })
 });
 
+app.get("/test2",async(req,res)=>{
+    try{
+        console.log("got the get")
+        return res.status(200).json({
+            success:true,
+            message:"Done!"
+        })
+    } catch(err){
+        return res.status(500).json({
+            success:false,
+            message:"error occ"
+        })
+    }
+});
+
+app.post("/test",async(req,res)=>{
+    try{
+        console.log(req.body);
+        return res.status(200).json({
+            success:true,
+            message:"Done!"
+        })
+    } catch(err){
+        return res.status(500).json({
+            success:false,
+            message:"error occ"
+        })
+    }
+});
+
 Moralis.start({
     apiKey : process.env.MORALIS_API
 }).then(()=>{
